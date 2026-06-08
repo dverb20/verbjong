@@ -16,7 +16,9 @@ export function CardViewer() {
           ← Back
         </button>
         <h2 className="font-bold text-sumi-deep">🎴 Cards</h2>
-        <span className="w-10" />
+        <button onClick={() => setScreen('glossary')} className="text-matcha-deep text-sm font-semibold">
+          🌼 Key
+        </button>
       </div>
 
       {/* Year tabs — tap a year to view that card. */}

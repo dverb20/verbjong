@@ -28,7 +28,7 @@ import {
 } from '../engine/game';
 import { matchHand } from '../engine/matcher';
 
-export type Screen = 'home' | 'game' | 'cards' | 'editor' | 'stats';
+export type Screen = 'home' | 'game' | 'cards' | 'editor' | 'stats' | 'glossary';
 
 export interface Settings {
   year: number;

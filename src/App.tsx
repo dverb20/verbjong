@@ -4,6 +4,7 @@ import { GameTable } from './components/GameTable';
 import { CardViewer } from './components/CardViewer';
 import { CardEditor } from './components/CardEditor';
 import { StatsScreen } from './components/StatsScreen';
+import { Glossary } from './components/Glossary';
 import { Petals } from './components/Petals';
 
 export default function App() {
@@ -17,6 +18,7 @@ export default function App() {
         {screen === 'cards' && <CardViewer />}
         {screen === 'editor' && <CardEditor />}
         {screen === 'stats' && <StatsScreen />}
+        {screen === 'glossary' && <Glossary />}
       </div>
     </>
   );

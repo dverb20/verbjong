@@ -107,6 +107,13 @@ export function Home() {
         </button>
       </div>
 
+      <button
+        onClick={() => setScreen('glossary')}
+        className="w-full py-3 rounded-full bg-matcha-soft border border-matcha text-matcha-deep font-semibold text-sm"
+      >
+        🌼 New here? What do the symbols mean?
+      </button>
+
       <p className="text-center text-xs text-sumi-soft">
         {stats.gamesPlayed > 0
           ? `${stats.wins} of ${stats.gamesPlayed} games won · best ${stats.bestPoints} pts`

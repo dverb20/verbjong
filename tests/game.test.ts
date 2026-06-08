@@ -86,13 +86,26 @@ describe('calling an exposure', () => {
     expect(g.discards.find((d) => d.id === five.id)).toBeUndefined();
   });
 
-  it('cannot call with fewer than two natural matches', () => {
+  it('cannot call with no matching natural tile', () => {
     let g = freshGame();
     g.players[1].concealed = tiles('5B 1C 2C 3C 4D 6D 7D 8D 9D N E W S');
     const five = t('5B');
     g.players[0].concealed.unshift(five);
     g = discardTile(g, 0, five.id);
-    expect(maxExposureCount(g, 1)).toBe(0);
+    expect(maxExposureCount(g, 1)).toBe(0); // only one 5B, no joker
+  });
+
+  it('can call with one matching tile plus a joker (pung with a joker)', () => {
+    let g = freshGame();
+    g.players[1].concealed = tiles('5B J 1C 2C 3C 4D 6D 7D 8D 9D N E W');
+    const five = t('5B');
+    g.players[0].concealed.unshift(five);
+    g = discardTile(g, 0, five.id);
+    expect(maxExposureCount(g, 1)).toBeGreaterThanOrEqual(3);
+    g = callExposure(g, 1, 3);
+    expect(g.players[1].exposures).toHaveLength(1);
+    expect(g.players[1].exposures[0].tiles).toHaveLength(3);
+    expect(g.players[1].exposures[0].tiles.some((x) => x.kind === 'joker')).toBe(true);
   });
 });
 

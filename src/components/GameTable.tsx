@@ -353,19 +353,23 @@ function CallControls() {
 
   return (
     <div className="space-y-2 animate-pop">
-      <div className="text-center text-sm text-sumi">
-        {tile &&
-          (canClaim ? (
-            <>
-              You can claim <span className="font-bold text-koi-deep">{tileLabel(tile)}</span>!
-            </>
-          ) : (
-            <>
-              {fromName} discarded{' '}
-              <span className="font-bold text-sumi-deep">{tileLabel(tile)}</span>.
-            </>
-          ))}
-      </div>
+      {canClaim ? (
+        <div className="rounded-xl bg-koi/15 border border-koi px-3 py-2 text-center">
+          <div className="font-bold text-koi-deep text-sm">
+            ✋ You can take {tile ? tileLabel(tile) : 'this'}!
+          </div>
+          <div className="text-xs text-sumi-soft">Tap the glowing tile, or a button below.</div>
+        </div>
+      ) : (
+        <div className="rounded-xl bg-washi border border-washi-deep px-3 py-2 text-center">
+          <div className="font-semibold text-sumi text-sm">
+            {fromName} discarded {tile ? tileLabel(tile) : ''} — you can't take this one.
+          </div>
+          <div className="text-xs text-sumi-soft">
+            To claim, you'd need a matching tile in hand (a joker can fill in). Tap “Keep going.”
+          </div>
+        </div>
+      )}
       <div className="flex gap-2">
         {prompt.canMahjong && (
           <button onClick={callMahjong} className="flex-1 py-3 btn-primary">

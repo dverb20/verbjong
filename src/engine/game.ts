@@ -257,10 +257,13 @@ export function maxExposureCount(state: GameState, seat: number): number {
   const key = tileKey(ld.tile);
   const naturals = p.concealed.filter((t) => !isJoker(t) && tileKey(t) === key).length;
   const jokers = p.concealed.filter(isJoker).length;
-  if (naturals < 2) return 0; // need 2 matches to call
-  // pung uses called + 2 naturals; jokers/extra naturals can extend to 5.
-  const extra = naturals - 2 + jokers;
-  return Math.min(5, 3 + extra);
+  // You must hold at least ONE real matching tile (you can't claim a tile you
+  // don't have, even with jokers). The rest of the group may be naturals or
+  // jokers — so 1 match + 1 joker is enough to call a pung.
+  if (naturals < 1) return 0;
+  if (naturals + jokers < 2) return 0; // can't reach a group of 3 with the discard
+  // Group size = the discard + everything usable from hand (capped at a quint).
+  return Math.min(5, 1 + naturals + jokers);
 }
 
 /**

@@ -122,21 +122,38 @@ function OpponentCard({ player, active }: { player: Player; active: boolean }) {
 }
 
 function Center({ game }: { game: GameState }) {
+  const callPrompt = useStore((s) => s.callPrompt);
+  const callExposure = useStore((s) => s.humanCallExposure);
+  const callMahjong = useStore((s) => s.humanCallMahjong);
+  const claimable = !!callPrompt && (callPrompt.canMahjong || callPrompt.maxExposure >= 3);
+  const claim = () => {
+    if (!callPrompt) return;
+    if (callPrompt.canMahjong) callMahjong();
+    else callExposure(3);
+  };
+
   return (
     <div className="flex-1 min-h-0 px-3 py-2 flex flex-col">
-      <div className="text-xs uppercase tracking-wider text-sumi-soft mb-1">Discards</div>
+      <div className="text-xs uppercase tracking-wider text-sumi-soft mb-1">
+        Discards
+        {claimable && <span className="text-koi-deep normal-case"> · tap the glowing tile to take it</span>}
+      </div>
       <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar">
         <div className="flex flex-wrap gap-1 content-start">
-          {game.discards.map((t, i) => (
-            <Tile
-              key={t.id}
-              tile={t}
-              size="sm"
-              className={
-                i === game.discards.length - 1 && game.lastDiscard ? 'ring-2 ring-koi' : ''
-              }
-            />
-          ))}
+          {game.discards.map((t, i) => {
+            const isLast = i === game.discards.length - 1 && !!game.lastDiscard;
+            return (
+              <Tile
+                key={t.id}
+                tile={t}
+                size="sm"
+                onClick={isLast && claimable ? claim : undefined}
+                className={
+                  isLast ? (claimable ? 'ring-2 ring-koi animate-pop' : 'ring-2 ring-koi') : ''
+                }
+              />
+            );
+          })}
           {game.discards.length === 0 && (
             <span className="text-sumi-soft/70 text-sm">No discards yet.</span>
           )}
@@ -331,17 +348,23 @@ function CallControls() {
   const callMahjong = useStore((s) => s.humanCallMahjong);
   const pass = useStore((s) => s.humanPassCall);
   const tile = game.lastDiscard?.tile;
+  const fromName = game.lastDiscard ? game.players[game.lastDiscard.seat].name : '';
+  const canClaim = prompt.canMahjong || prompt.maxExposure >= 3;
 
   return (
     <div className="space-y-2 animate-pop">
       <div className="text-center text-sm text-sumi">
-        {tile ? (
-          <>
-            Claim <span className="font-bold text-koi-deep">{tileLabel(tile)}</span>?
-          </>
-        ) : (
-          'Claim the discard?'
-        )}
+        {tile &&
+          (canClaim ? (
+            <>
+              You can claim <span className="font-bold text-koi-deep">{tileLabel(tile)}</span>!
+            </>
+          ) : (
+            <>
+              {fromName} discarded{' '}
+              <span className="font-bold text-sumi-deep">{tileLabel(tile)}</span>.
+            </>
+          ))}
       </div>
       <div className="flex gap-2">
         {prompt.canMahjong && (
@@ -365,8 +388,15 @@ function CallControls() {
             Kong
           </button>
         )}
-        <button onClick={pass} className="px-5 py-3 btn-soft">
-          Pass
+        <button
+          onClick={pass}
+          className={
+            canClaim
+              ? 'px-5 py-3 btn-soft'
+              : 'flex-1 py-3 rounded-full bg-matcha text-white font-black shadow-soft active:scale-95'
+          }
+        >
+          Keep going ▸
         </button>
       </div>
     </div>

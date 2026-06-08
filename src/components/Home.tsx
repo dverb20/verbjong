@@ -88,6 +88,25 @@ export function Home() {
         </button>
       </section>
 
+      <section className="flex items-center justify-between panel px-4 py-3">
+        <div>
+          <div className="font-semibold text-sumi">Step through turns</div>
+          <div className="text-xs text-sumi-soft">Pause after each opponent's discard</div>
+        </div>
+        <button
+          onClick={() => setSettings({ pauseOnDiscard: !settings.pauseOnDiscard })}
+          className={`w-12 h-7 rounded-full transition relative ${
+            settings.pauseOnDiscard ? 'bg-matcha' : 'bg-washi-deep'
+          }`}
+        >
+          <span
+            className={`absolute top-0.5 w-6 h-6 rounded-full bg-white shadow transition-all ${
+              settings.pauseOnDiscard ? 'left-[1.4rem]' : 'left-0.5'
+            }`}
+          />
+        </button>
+      </section>
+
       <button
         onClick={startGame}
         className="w-full py-4 btn-primary text-lg"

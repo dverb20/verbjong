@@ -35,6 +35,8 @@ export interface Settings {
   difficulty: Difficulty;
   charlestonEnabled: boolean;
   playerName: string;
+  /** Pause after each opponent's discard so you can claim it or continue. */
+  pauseOnDiscard: boolean;
 }
 
 const DEFAULT_SETTINGS: Settings = {
@@ -42,6 +44,7 @@ const DEFAULT_SETTINGS: Settings = {
   difficulty: 'medium',
   charlestonEnabled: true,
   playerName: 'You',
+  pauseOnDiscard: true,
 };
 
 // --- session persistence ---------------------------------------------------
@@ -211,8 +214,12 @@ export const useStore = create<StoreState>((set, get) => {
       }
       const botMJ = botMahjongSeat(g);
       if (botMJ !== null) return { run: () => apply(declareMahjong(g, botMJ, true)), delay: 650 };
-      if (maxExposureCount(g, 0) >= 3) {
-        set({ callPrompt: { canMahjong: false, maxExposure: maxExposureCount(g, 0) } });
+      // Pause for the human when they can legally claim, OR (when stepping is on)
+      // after any opponent's discard so they can review and continue at their pace.
+      const maxExp = maxExposureCount(g, 0);
+      const fromOpponent = (g.lastDiscard?.seat ?? 0) !== 0;
+      if (maxExp >= 3 || (get().settings.pauseOnDiscard && fromOpponent)) {
+        set({ callPrompt: { canMahjong: false, maxExposure: maxExp } });
         return null;
       }
       return { run: () => apply(resolveBotsForDiscard(g)), delay: 500 };

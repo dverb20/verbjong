@@ -37,6 +37,42 @@ export interface Settings {
   playerName: string;
 }
 
+const DEFAULT_SETTINGS: Settings = {
+  year: 2026,
+  difficulty: 'medium',
+  charlestonEnabled: true,
+  playerName: 'You',
+};
+
+// --- session persistence ---------------------------------------------------
+// We save the active game, the current screen, and settings so a page refresh
+// doesn't lose your place. The whole GameState is plain JSON (tiles are plain
+// objects; the RNG and timers live outside state), so it serialises cleanly.
+const SESSION_KEY = 'verbjong.session.v1';
+
+interface SavedSession {
+  screen?: Screen;
+  settings?: Settings;
+  game?: GameState | null;
+}
+
+function loadSession(): SavedSession {
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    return raw ? (JSON.parse(raw) as SavedSession) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveSession(s: SavedSession) {
+  try {
+    localStorage.setItem(SESSION_KEY, JSON.stringify(s));
+  } catch {
+    /* storage unavailable — session just won't persist */
+  }
+}
+
 interface StoreState {
   screen: Screen;
   game: GameState | null;
@@ -65,6 +101,8 @@ interface StoreState {
   stopCharlestonNow: () => void;
 
   refreshStats: () => void;
+  /** Resume driving a game restored from a previous session (after a refresh). */
+  resume: () => void;
 }
 
 let timer: ReturnType<typeof setTimeout> | undefined;
@@ -193,10 +231,11 @@ export const useStore = create<StoreState>((set, get) => {
   }
 
   // --- public actions -----------------------------------------------------
+  const saved = loadSession();
   return {
-    screen: 'home',
-    game: null,
-    settings: { year: 2026, difficulty: 'medium', charlestonEnabled: true, playerName: 'You' },
+    screen: saved.game ? (saved.screen ?? 'home') : 'home',
+    game: saved.game ?? null,
+    settings: { ...DEFAULT_SETTINGS, ...(saved.settings ?? {}) },
     callPrompt: null,
     selfDrawWin: false,
     coaching: null,
@@ -288,5 +327,18 @@ export const useStore = create<StoreState>((set, get) => {
     },
 
     refreshStats: () => set({ stats: loadStats() }),
+
+    resume: () => schedule(),
   };
 });
+
+// Persist screen + settings + the active game on every change, so a refresh
+// keeps your place.
+useStore.subscribe((s) => saveSession({ screen: s.screen, settings: s.settings, game: s.game }));
+
+// If a game was restored from a previous session, pick the orchestration back up
+// (draw for bots, re-offer a pending call, etc.). Runs once at startup.
+{
+  const g = useStore.getState().game;
+  if (g && g.phase !== 'result') useStore.getState().resume();
+}

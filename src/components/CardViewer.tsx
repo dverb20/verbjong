@@ -1,60 +1,45 @@
 import { useMemo } from 'react';
 import { useStore } from '../state/store';
-import { getCard } from '../data/cards';
-import { HandPattern } from './HandPattern';
-import type { Hand } from '../engine/cardSchema';
+import { AVAILABLE_YEARS, getCard } from '../data/cards';
+import { CardHandsList } from './CardHandsList';
 
 export function CardViewer() {
   const year = useStore((s) => s.settings.year);
+  const setSettings = useStore((s) => s.setSettings);
   const setScreen = useStore((s) => s.setScreen);
   const card = useMemo(() => getCard(year), [year]);
 
-  const byCategory = useMemo(() => {
-    const map = new Map<string, Hand[]>();
-    for (const h of card.hands) {
-      const arr = map.get(h.category) ?? [];
-      arr.push(h);
-      map.set(h.category, arr);
-    }
-    return [...map.entries()];
-  }, [card]);
-
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between px-4 py-3 bg-black/20">
-        <button onClick={() => setScreen('home')} className="opacity-70 hover:opacity-100">
+      <div className="flex items-center justify-between px-4 py-3 bg-white/50 border-b border-washi-deep">
+        <button onClick={() => setScreen('home')} className="text-sumi-soft hover:text-sumi">
           ← Back
         </button>
-        <h2 className="font-bold">{card.name}</h2>
-        <button onClick={() => setScreen('editor')} className="text-amber-300 text-sm">
-          Edit
-        </button>
+        <h2 className="font-bold text-sumi-deep">🎴 Cards</h2>
+        <span className="w-10" />
       </div>
 
-      <div className="flex-1 overflow-y-auto no-scrollbar px-4 py-3 space-y-5">
-        <p className="text-xs text-emerald-200/60">
-          Colours show how many distinct suits a hand needs (the card's colour rule). “N” means any
-          number; “N+1” the next consecutive. Jokers are allowed only in groups of 3+.
-        </p>
-        {byCategory.map(([cat, hands]) => (
-          <section key={cat} className="space-y-3">
-            <h3 className="text-xs uppercase tracking-wider text-amber-300/80 border-b border-white/10 pb-1">
-              {cat}
-            </h3>
-            {hands.map((h) => (
-              <div key={h.id} className="bg-white/5 rounded-lg p-3 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold text-sm">{h.name}</span>
-                  <span className="text-xs text-amber-300 font-bold">
-                    {h.points} pts{h.concealed ? ' · C' : ''}
-                  </span>
-                </div>
-                <HandPattern hand={h} />
-                {h.note && <p className="text-xs text-emerald-200/60">{h.note}</p>}
-              </div>
-            ))}
-          </section>
+      {/* Year tabs — tap a year to view that card. */}
+      <div className="flex gap-2 px-3 py-3 overflow-x-auto no-scrollbar">
+        {AVAILABLE_YEARS.map((y) => (
+          <button
+            key={y}
+            onClick={() => setSettings({ year: y })}
+            className={`px-4 py-2 rounded-full font-bold text-sm shrink-0 border transition ${
+              year === y
+                ? 'bg-sakura text-white border-sakura-deep shadow-petal'
+                : 'bg-white/70 border-washi-deep text-sumi hover:bg-white'
+            }`}
+          >
+            {y}
+          </button>
         ))}
+      </div>
+
+      <div className="px-2 pb-1 text-center text-xs text-sumi-soft">{card.name}</div>
+
+      <div className="flex-1 overflow-y-auto no-scrollbar px-4 py-3">
+        <CardHandsList card={card} />
       </div>
     </div>
   );

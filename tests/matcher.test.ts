@@ -32,6 +32,22 @@ function rack(spec: string): Tile[] {
 const card = buildDemoCard(2026);
 const hand = (id: string) => card.hands.find((h) => h.id === id)!;
 
+describe('demo card integrity', () => {
+  it('every hand totals 14 tiles for all available years', () => {
+    for (const year of [2021, 2022, 2023, 2024, 2025, 2026]) {
+      for (const h of buildDemoCard(year).hands) {
+        const total = h.groups.reduce((s, g) => s + g.count, 0);
+        expect(total, `${year} ${h.name}`).toBe(14);
+      }
+    }
+  });
+
+  it('has unique hand ids', () => {
+    const ids = card.hands.map((h) => h.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+});
+
 describe('matchHand — completion', () => {
   it('completes an evens hand (2222 4444 6666 88, one suit)', () => {
     const r = rack('2B*4 4B*4 6B*4 8B*2');

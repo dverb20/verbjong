@@ -11,11 +11,11 @@ export function StatsScreen() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between px-4 py-3 bg-black/20">
-        <button onClick={() => setScreen('home')} className="opacity-70 hover:opacity-100">
+      <div className="flex items-center justify-between px-4 py-3 bg-white/50 border-b border-washi-deep">
+        <button onClick={() => setScreen('home')} className="text-sumi-soft hover:text-sumi">
           ← Back
         </button>
-        <h2 className="font-bold">Your Progress</h2>
+        <h2 className="font-bold text-sumi-deep">🌱 Your Progress</h2>
         <span className="w-10" />
       </div>
 
@@ -28,14 +28,14 @@ export function StatsScreen() {
         </div>
 
         <section className="space-y-2">
-          <h3 className="text-xs uppercase tracking-wider text-amber-300/80">By difficulty</h3>
+          <h3 className="text-xs uppercase tracking-wider text-koi-deep font-bold">By difficulty</h3>
           {Object.keys(stats.byDifficulty).length === 0 && (
-            <p className="text-sm text-emerald-200/60">No games yet — play to fill this in.</p>
+            <p className="text-sm text-sumi-soft">No games yet — play to fill this in.</p>
           )}
           {Object.entries(stats.byDifficulty).map(([d, v]) => (
-            <div key={d} className="flex justify-between bg-white/5 rounded-lg px-3 py-2 text-sm">
-              <span className="capitalize">{d}</span>
-              <span className="text-emerald-200/80">
+            <div key={d} className="flex justify-between panel px-3 py-2 text-sm">
+              <span className="capitalize text-sumi">{d}</span>
+              <span className="text-sumi-soft">
                 {v.wins}/{v.played} ({v.played ? Math.round((v.wins / v.played) * 100) : 0}%)
               </span>
             </div>
@@ -48,7 +48,7 @@ export function StatsScreen() {
             setStats(next);
             refreshStats();
           }}
-          className="w-full py-3 rounded-xl bg-white/10 font-semibold text-sm"
+          className="w-full py-3 btn-soft text-sm"
         >
           Reset stats
         </button>
@@ -59,9 +59,9 @@ export function StatsScreen() {
 
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
-      <div className="text-3xl font-black text-amber-300">{value}</div>
-      <div className="text-xs uppercase tracking-wider text-emerald-200/60 mt-1">{label}</div>
+    <div className="panel p-4 text-center">
+      <div className="text-3xl font-black text-matcha-deep">{value}</div>
+      <div className="text-xs uppercase tracking-wider text-sumi-soft mt-1">{label}</div>
     </div>
   );
 }

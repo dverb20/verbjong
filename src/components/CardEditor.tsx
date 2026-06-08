@@ -42,19 +42,19 @@ export function CardEditor() {
   const reset = () => {
     resetCard(year);
     setText(exportCardJson(year));
-    setMessage({ kind: 'ok', text: 'Reverted to the built-in demo card.' });
+    setMessage({ kind: 'ok', text: 'Reverted to the built-in practice card.' });
   };
 
   const badHands = parsed.card?.hands.filter((h) => !isHandWellFormed(h)) ?? [];
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between px-4 py-3 bg-black/20">
-        <button onClick={() => setScreen('home')} className="opacity-70 hover:opacity-100">
+      <div className="flex items-center justify-between px-4 py-3 bg-white/50 border-b border-washi-deep">
+        <button onClick={() => setScreen('home')} className="text-sumi-soft hover:text-sumi">
           ← Back
         </button>
-        <h2 className="font-bold">Card Editor</h2>
-        <button onClick={() => setScreen('cards')} className="text-amber-300 text-sm">
+        <h2 className="font-bold text-sumi-deep">✎ Card Editor</h2>
+        <button onClick={() => setScreen('cards')} className="text-koi-deep text-sm font-semibold">
           View
         </button>
       </div>
@@ -65,8 +65,8 @@ export function CardEditor() {
             <button
               key={y}
               onClick={() => reload(y)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-semibold border ${
-                year === y ? 'bg-amber-400 text-emerald-950 border-amber-300' : 'bg-white/5 border-white/10'
+              className={`px-3 py-1.5 rounded-full text-sm font-semibold border ${
+                year === y ? 'bg-sakura text-white border-sakura-deep' : 'bg-white/70 border-washi-deep text-sumi'
               }`}
             >
               {y}
@@ -75,35 +75,34 @@ export function CardEditor() {
           ))}
         </div>
 
-        <p className="text-xs text-emerald-200/60">
-          Edit the JSON below to enter the hands from a card you own (for personal use). Each hand's
-          groups must total 14 tiles. Roles: <code>number</code>, <code>flower</code>,{' '}
-          <code>dragon</code>, <code>soap</code>, <code>wind</code>, <code>yearDigit</code>. Use{' '}
-          <code>suitRef</code> “A/B/C” for the colour rule and <code>numberRef</code>{' '}
-          “n/n+1/n+2” or a fixed number.
+        <p className="text-xs text-sumi-soft leading-relaxed">
+          Advanced: this edits the card as raw data. Each hand's groups must total 14 tiles. Roles:{' '}
+          <code>number</code>, <code>flower</code>, <code>dragon</code>, <code>soap</code>,{' '}
+          <code>wind</code>, <code>yearDigit</code>. Use <code>suitRef</code> “A/B/C” for the colour
+          rule and <code>numberRef</code> “n/n+1/n+2” or a fixed number. Saved cards stay on this device.
         </p>
 
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
           spellCheck={false}
-          className="w-full h-48 rounded-lg bg-black/40 border border-white/10 p-3 font-mono text-xs text-emerald-100"
+          className="w-full h-48 rounded-2xl bg-white/80 border border-washi-deep p-3 font-mono text-xs text-sumi-deep"
         />
 
-        {parsed.error && <div className="text-red-300 text-xs">Invalid JSON: {parsed.error}</div>}
+        {parsed.error && <div className="text-crak text-xs">Invalid JSON: {parsed.error}</div>}
         {!parsed.error && badHands.length > 0 && (
-          <div className="text-amber-300 text-xs">
+          <div className="text-koi-deep text-xs">
             {badHands.length} hand(s) don't total 14 tiles: {badHands.map((h) => h.name).join(', ')}
           </div>
         )}
         {message && (
-          <div className={`text-xs ${message.kind === 'ok' ? 'text-emerald-300' : 'text-red-300'}`}>
+          <div className={`text-xs ${message.kind === 'ok' ? 'text-matcha-deep' : 'text-crak'}`}>
             {message.text}
           </div>
         )}
 
         <div className="flex gap-2">
-          <button onClick={save} className="flex-1 py-3 rounded-xl bg-amber-400 text-emerald-950 font-black">
+          <button onClick={save} className="flex-1 py-3 btn-primary">
             Save
           </button>
           <button
@@ -111,23 +110,23 @@ export function CardEditor() {
               navigator.clipboard?.writeText(text);
               setMessage({ kind: 'ok', text: 'Copied JSON to clipboard.' });
             }}
-            className="px-4 py-3 rounded-xl bg-white/10 font-semibold"
+            className="px-4 py-3 btn-soft"
           >
             Copy
           </button>
-          <button onClick={reset} className="px-4 py-3 rounded-xl bg-white/10 font-semibold">
+          <button onClick={reset} className="px-4 py-3 btn-soft">
             Reset
           </button>
         </div>
 
         {parsed.card && (
           <section className="space-y-2 pt-2">
-            <h3 className="text-xs uppercase tracking-wider text-amber-300/80">Preview</h3>
+            <h3 className="text-xs uppercase tracking-wider text-koi-deep font-bold">Preview</h3>
             {parsed.card.hands.map((h, i) => (
-              <div key={i} className="bg-white/5 rounded-lg p-2 space-y-1">
+              <div key={i} className="panel p-2 space-y-1">
                 <div className="flex justify-between text-sm">
-                  <span className="font-semibold">{h.name}</span>
-                  <span className={isHandWellFormed(h) ? 'text-emerald-300 text-xs' : 'text-red-300 text-xs'}>
+                  <span className="font-semibold text-sumi">{h.name}</span>
+                  <span className={isHandWellFormed(h) ? 'text-matcha-deep text-xs' : 'text-crak text-xs'}>
                     {h.groups.reduce((s, g) => s + g.count, 0)}/14
                   </span>
                 </div>

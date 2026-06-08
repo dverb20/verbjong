@@ -11,6 +11,7 @@ import {
 } from '../engine/game';
 import type { GameState, Player } from '../engine/game';
 import { findBestHand } from '../engine/matcher';
+import { CardHandsList } from './CardHandsList';
 
 const KIND_ORDER: Record<string, number> = { suit: 0, wind: 1, dragon: 2, flower: 3, joker: 4 };
 const SUIT_ORDER: Record<string, number> = { bam: 0, crak: 1, dot: 2 };
@@ -28,29 +29,65 @@ function sortRack(tiles: TileT[]): TileT[] {
 export function GameTable() {
   const game = useStore((s) => s.game)!;
   const newGame = useStore((s) => s.newGame);
+  const [showCard, setShowCard] = useState(false);
 
   if (!game) return null;
   return (
     <div className="relative flex flex-col h-full">
-      <TopBar game={game} onExit={newGame} />
+      <TopBar game={game} onExit={newGame} onViewCard={() => setShowCard(true)} />
       <Opponents game={game} />
       <Center game={game} />
       <Bottom game={game} />
+      {showCard && <CardOverlay game={game} onClose={() => setShowCard(false)} />}
       {game.phase === 'result' && <ResultOverlay />}
     </div>
   );
 }
 
-function TopBar({ game, onExit }: { game: GameState; onExit: () => void }) {
+function TopBar({
+  game,
+  onExit,
+  onViewCard,
+}: {
+  game: GameState;
+  onExit: () => void;
+  onViewCard: () => void;
+}) {
   return (
-    <div className="flex items-center justify-between px-3 py-2 text-sm bg-black/20">
-      <button onClick={onExit} className="opacity-70 hover:opacity-100">
+    <div className="flex items-center justify-between px-3 py-2 text-sm bg-white/55 border-b border-washi-deep">
+      <button onClick={onExit} className="text-sumi-soft hover:text-sumi font-medium">
         ← Exit
       </button>
-      <span className="opacity-70">
-        {game.card.name} · Wall {game.wall.length}
+      <span className="text-sumi-soft text-xs">
+        Wall {game.wall.length} · {game.phase === 'charleston' ? 'Charleston' : 'Playing'}
       </span>
-      <span className="opacity-70">{game.phase === 'charleston' ? 'Charleston' : 'Playing'}</span>
+      <button
+        onClick={onViewCard}
+        className="chip bg-koi text-white border-koi-deep px-3 py-1 text-sm shadow-soft active:scale-95"
+      >
+        🎴 Card
+      </button>
+    </div>
+  );
+}
+
+function CardOverlay({ game, onClose }: { game: GameState; onClose: () => void }) {
+  return (
+    <div className="absolute inset-0 z-30 bg-sumi/30 flex flex-col" onClick={onClose}>
+      <div
+        className="mt-auto bg-washi-soft rounded-t-3xl max-h-[85%] flex flex-col animate-pop shadow-soft"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-4 py-3 border-b border-washi-deep">
+          <h2 className="font-bold text-sumi-deep">🎴 {game.card.name}</h2>
+          <button onClick={onClose} className="btn-soft px-4 py-1.5 text-sm">
+            Close
+          </button>
+        </div>
+        <div className="overflow-y-auto no-scrollbar px-4 py-3">
+          <CardHandsList card={game.card} />
+        </div>
+      </div>
     </div>
   );
 }
@@ -69,12 +106,12 @@ function Opponents({ game }: { game: GameState }) {
 function OpponentCard({ player, active }: { player: Player; active: boolean }) {
   return (
     <div
-      className={`rounded-lg p-2 border text-center ${
-        active ? 'border-amber-400 bg-amber-400/10' : 'border-white/10 bg-white/5'
+      className={`rounded-2xl p-2 border text-center transition ${
+        active ? 'border-koi bg-koi/15 shadow-soft' : 'border-washi-deep bg-white/50'
       }`}
     >
-      <div className="font-semibold text-sm truncate">{player.name}</div>
-      <div className="text-xs opacity-70">{player.concealed.length} tiles</div>
+      <div className="font-semibold text-sm truncate text-sumi">{player.name}</div>
+      <div className="text-xs text-sumi-soft">{player.concealed.length} tiles</div>
       <div className="flex flex-wrap gap-0.5 justify-center mt-1 min-h-[1rem]">
         {player.exposures.flatMap((e, ei) =>
           e.tiles.map((t, ti) => <Tile key={`${ei}-${ti}`} tile={t} size="sm" />),
@@ -87,7 +124,7 @@ function OpponentCard({ player, active }: { player: Player; active: boolean }) {
 function Center({ game }: { game: GameState }) {
   return (
     <div className="flex-1 min-h-0 px-3 py-2 flex flex-col">
-      <div className="text-xs uppercase tracking-wider text-emerald-200/60 mb-1">Discards</div>
+      <div className="text-xs uppercase tracking-wider text-sumi-soft mb-1">Discards</div>
       <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar">
         <div className="flex flex-wrap gap-1 content-start">
           {game.discards.map((t, i) => (
@@ -95,11 +132,13 @@ function Center({ game }: { game: GameState }) {
               key={t.id}
               tile={t}
               size="sm"
-              className={i === game.discards.length - 1 && game.lastDiscard ? 'ring-2 ring-amber-400' : ''}
+              className={
+                i === game.discards.length - 1 && game.lastDiscard ? 'ring-2 ring-koi' : ''
+              }
             />
           ))}
           {game.discards.length === 0 && (
-            <span className="text-emerald-200/40 text-sm">No discards yet.</span>
+            <span className="text-sumi-soft/70 text-sm">No discards yet.</span>
           )}
         </div>
       </div>
@@ -126,18 +165,18 @@ function Bottom({ game }: { game: GameState }) {
   // The Charleston has its own integrated 3-pick rack, so render it on its own.
   if (inCharleston) {
     return (
-      <div className="bg-black/30 border-t border-white/10 px-2 pt-2 pb-3 space-y-2">
+      <div className="bg-white/65 border-t border-washi-deep px-2 pt-2 pb-3 space-y-2">
         <CharlestonControls />
       </div>
     );
   }
 
   return (
-    <div className="bg-black/30 border-t border-white/10 px-2 pt-2 pb-3 space-y-2">
+    <div className="bg-white/65 border-t border-washi-deep px-2 pt-2 pb-3 space-y-2">
       {/* coaching hint */}
       {best && game.phase === 'play' && (
-        <div className="text-center text-xs text-emerald-200/70">
-          Closest: <span className="text-amber-300 font-semibold">{best.hand.name}</span> ·{' '}
+        <div className="text-center text-xs text-sumi-soft">
+          Closest: <span className="text-koi-deep font-semibold">{best.hand.name}</span> ·{' '}
           {best.tilesShort} away
         </div>
       )}
@@ -159,34 +198,25 @@ function Bottom({ game }: { game: GameState }) {
             tile={t}
             size="md"
             selected={selected === t.id}
-            onClick={
-              inCharleston || myTurn
-                ? () => setSelected((cur) => (cur === t.id ? null : t.id))
-                : undefined
-            }
+            onClick={myTurn ? () => setSelected((cur) => (cur === t.id ? null : t.id)) : undefined}
           />
         ))}
       </div>
 
       {/* action area */}
-      {inCharleston ? (
-        <CharlestonControls />
-      ) : callPrompt ? (
+      {callPrompt ? (
         <CallControls />
       ) : (
         <div className="flex gap-2">
           {selfDrawWin && (
-            <button
-              onClick={declareSelfDraw}
-              className="flex-1 py-3 rounded-xl bg-amber-400 text-emerald-950 font-black animate-pop"
-            >
+            <button onClick={declareSelfDraw} className="flex-1 py-3 btn-primary animate-pop">
               Declare Mahjong! 🀄
             </button>
           )}
           {swaps.length > 0 && (
             <button
               onClick={() => jokerExchange(swaps[0].targetSeat, swaps[0].exposureIdx, swaps[0].tileId)}
-              className="px-4 py-3 rounded-xl bg-fuchsia-600/80 font-semibold text-sm"
+              className="px-4 py-3 rounded-full bg-sakura-soft text-sakura-deep border border-sakura font-semibold text-sm"
             >
               Swap joker
             </button>
@@ -199,10 +229,10 @@ function Bottom({ game }: { game: GameState }) {
                 setSelected(null);
               }
             }}
-            className={`flex-1 py-3 rounded-xl font-black transition ${
+            className={`flex-1 py-3 rounded-full font-black transition ${
               myTurn && selected
-                ? 'bg-amber-400 text-emerald-950 active:scale-95'
-                : 'bg-white/10 text-white/40'
+                ? 'bg-matcha text-white shadow-soft active:scale-95'
+                : 'bg-washi-deep/60 text-sumi-soft'
             }`}
           >
             {myTurn ? (selected ? 'Discard' : 'Select a tile') : 'Waiting…'}
@@ -220,9 +250,7 @@ function CharlestonControls() {
   const step = charlestonStep(game);
   const me = game.players[0];
 
-  // We re-read the selection from the rack's selected ring via a local mirror.
   const [picked, setPicked] = useState<string[]>([]);
-  // Sync: clear picks when the pass changes.
   const stepKey = game.charlestonIndex;
 
   return (
@@ -239,11 +267,6 @@ function CharlestonControls() {
   );
 }
 
-/**
- * Charleston picker. Because the rack tiles are rendered by Bottom(), we provide
- * a compact instruction + confirm bar here; selection is mirrored via window
- * events would be overkill, so we render our own 3-pick chooser inline.
- */
 function CharlestonInner(props: {
   dir: string;
   canStop: boolean;
@@ -263,8 +286,8 @@ function CharlestonInner(props: {
   };
   return (
     <div className="space-y-2">
-      <div className="text-center text-sm">
-        Pass <span className="font-bold text-amber-300 uppercase">{dir}</span> — pick 3 tiles ({picked.length}/3)
+      <div className="text-center text-sm text-sumi">
+        Pass <span className="font-bold text-koi-deep uppercase">{dir}</span> — pick 3 tiles ({picked.length}/3)
       </div>
       <div className="flex gap-1 overflow-x-auto no-scrollbar justify-center flex-wrap">
         {sorted.map((t) => (
@@ -280,7 +303,7 @@ function CharlestonInner(props: {
       </div>
       <div className="flex gap-2">
         {canStop && (
-          <button onClick={onStop} className="px-4 py-3 rounded-xl bg-white/10 font-semibold">
+          <button onClick={onStop} className="px-4 py-3 btn-soft">
             Stop
           </button>
         )}
@@ -290,8 +313,8 @@ function CharlestonInner(props: {
             onSubmit(picked);
             setPicked([]);
           }}
-          className={`flex-1 py-3 rounded-xl font-black transition ${
-            picked.length === 3 ? 'bg-amber-400 text-emerald-950 active:scale-95' : 'bg-white/10 text-white/40'
+          className={`flex-1 py-3 rounded-full font-black transition ${
+            picked.length === 3 ? 'bg-matcha text-white shadow-soft active:scale-95' : 'bg-washi-deep/60 text-sumi-soft'
           }`}
         >
           Pass {dir}
@@ -311,10 +334,10 @@ function CallControls() {
 
   return (
     <div className="space-y-2 animate-pop">
-      <div className="text-center text-sm">
+      <div className="text-center text-sm text-sumi">
         {tile ? (
           <>
-            Claim <span className="font-bold text-amber-300">{tileLabel(tile)}</span>?
+            Claim <span className="font-bold text-koi-deep">{tileLabel(tile)}</span>?
           </>
         ) : (
           'Claim the discard?'
@@ -322,21 +345,27 @@ function CallControls() {
       </div>
       <div className="flex gap-2">
         {prompt.canMahjong && (
-          <button onClick={callMahjong} className="flex-1 py-3 rounded-xl bg-amber-400 text-emerald-950 font-black">
+          <button onClick={callMahjong} className="flex-1 py-3 btn-primary">
             Mahjong!
           </button>
         )}
         {prompt.maxExposure >= 3 && (
-          <button onClick={() => callExposure(3)} className="flex-1 py-3 rounded-xl bg-sky-500/80 font-bold">
+          <button
+            onClick={() => callExposure(3)}
+            className="flex-1 py-3 rounded-full bg-sora text-white font-bold shadow-soft"
+          >
             Pung
           </button>
         )}
         {prompt.maxExposure >= 4 && (
-          <button onClick={() => callExposure(4)} className="flex-1 py-3 rounded-xl bg-sky-600/80 font-bold">
+          <button
+            onClick={() => callExposure(4)}
+            className="flex-1 py-3 rounded-full bg-sora-deep text-white font-bold shadow-soft"
+          >
             Kong
           </button>
         )}
-        <button onClick={pass} className="px-5 py-3 rounded-xl bg-white/10 font-semibold">
+        <button onClick={pass} className="px-5 py-3 btn-soft">
           Pass
         </button>
       </div>
@@ -352,18 +381,18 @@ function ResultOverlay() {
   const won = game.result === 'win' && game.winner?.seat === 0;
 
   return (
-    <div className="absolute inset-0 z-20 bg-black/70 flex items-center justify-center p-6">
-      <div className="bg-emerald-900 border border-white/15 rounded-2xl p-6 w-full max-w-sm text-center space-y-4 animate-pop">
-        <div className="text-5xl">{won ? '🎉' : game.result === 'wall' ? '🧱' : '🀄'}</div>
-        <h2 className="text-2xl font-black">
+    <div className="absolute inset-0 z-40 bg-sumi/40 flex items-center justify-center p-6">
+      <div className="bg-washi-soft border border-washi-deep rounded-3xl p-6 w-full max-w-sm text-center space-y-4 animate-pop shadow-soft">
+        <div className="text-5xl">{won ? '🌸' : game.result === 'wall' ? '🍃' : '🀄'}</div>
+        <h2 className="text-2xl font-black text-sumi-deep">
           {won ? 'You win!' : game.result === 'wall' ? 'Wall game' : `${game.players[game.winner!.seat].name} wins`}
         </h2>
-        {coaching && <p className="text-emerald-100/80 text-sm">{coaching}</p>}
+        {coaching && <p className="text-sumi-soft text-sm">{coaching}</p>}
         <div className="flex gap-2 pt-2">
-          <button onClick={newGame} className="flex-1 py-3 rounded-xl bg-white/10 font-semibold">
+          <button onClick={newGame} className="flex-1 py-3 btn-soft">
             Home
           </button>
-          <button onClick={startGame} className="flex-1 py-3 rounded-xl bg-amber-400 text-emerald-950 font-black">
+          <button onClick={startGame} className="flex-1 py-3 btn-primary">
             Play again
           </button>
         </div>

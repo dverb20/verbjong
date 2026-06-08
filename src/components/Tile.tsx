@@ -32,7 +32,7 @@ function TileFace({ tile }: { tile: TileT }) {
         </div>
       );
     case 'wind':
-      return <span className="font-extrabold text-slate-800 text-[1.4em]">{tile.wind}</span>;
+      return <span className="font-extrabold text-sumi text-[1.4em]">{tile.wind}</span>;
     case 'dragon': {
       if (tile.dragon === 'red') return <span className="font-extrabold text-crak text-[1.4em]">中</span>;
       if (tile.dragon === 'green') return <span className="font-extrabold text-bam text-[1.4em]">發</span>;
@@ -48,7 +48,7 @@ function TileFace({ tile }: { tile: TileT }) {
       return (
         <div className="flex flex-col items-center leading-none">
           <span className="text-[1.2em]">🃏</span>
-          <span className="text-[0.5em] font-bold uppercase tracking-wide text-fuchsia-600">Joker</span>
+          <span className="text-[0.5em] font-bold uppercase tracking-wide text-sakura-deep">Joker</span>
         </div>
       );
   }
@@ -58,7 +58,7 @@ export function Tile({ tile, size = 'md', selected, dimmed, onClick, faceDown, c
   if (faceDown) {
     return (
       <div
-        className={`${sizes[size]} shrink-0 bg-gradient-to-b from-emerald-700 to-emerald-900 border border-emerald-950 shadow-tile ${className}`}
+        className={`${sizes[size]} shrink-0 bg-gradient-to-b from-matcha to-matcha-deep border border-matcha-deep shadow-tile ${className}`}
       />
     );
   }
@@ -67,9 +67,9 @@ export function Tile({ tile, size = 'md', selected, dimmed, onClick, faceDown, c
       type="button"
       onClick={onClick}
       disabled={!onClick}
-      className={`${sizes[size]} shrink-0 flex items-center justify-center bg-gradient-to-b from-stone-50 to-stone-200 border border-stone-300 shadow-tile select-none transition-transform
+      className={`${sizes[size]} shrink-0 flex items-center justify-center bg-gradient-to-b from-washi-soft to-washi border border-washi-deep shadow-tile select-none transition-transform
         ${onClick ? 'active:scale-95 cursor-pointer' : 'cursor-default'}
-        ${selected ? '-translate-y-2 ring-2 ring-amber-400 shadow-tile-lifted' : ''}
+        ${selected ? '-translate-y-2 ring-2 ring-sakura shadow-tile-lifted' : ''}
         ${dimmed ? 'opacity-40' : ''}
         ${className}`}
     >

@@ -5,11 +5,11 @@
 import type { Group, Hand } from '../engine/cardSchema';
 
 const SUIT_REF_STYLE: Record<string, string> = {
-  A: 'bg-amber-400/20 text-amber-200 border-amber-400/40',
-  B: 'bg-sky-400/20 text-sky-200 border-sky-400/40',
-  C: 'bg-fuchsia-400/20 text-fuchsia-200 border-fuchsia-400/40',
+  A: 'bg-sakura-soft text-sakura-deep border-sakura',
+  B: 'bg-sora-soft text-sora-deep border-sora',
+  C: 'bg-matcha-soft text-matcha-deep border-matcha',
 };
-const NEUTRAL = 'bg-white/10 text-white/80 border-white/20';
+const NEUTRAL = 'bg-washi text-sumi border-washi-deep';
 
 function groupSymbol(g: Group): string {
   switch (g.role) {
@@ -41,7 +41,7 @@ export function HandPattern({ hand }: { hand: Hand }) {
             {Array.from({ length: g.count }).map((_, i) => (
               <span
                 key={i}
-                className={`inline-flex items-center justify-center w-6 h-7 rounded border text-xs font-bold ${style}`}
+                className={`inline-flex items-center justify-center w-6 h-7 rounded-md border text-xs font-bold ${style}`}
               >
                 {sym}
               </span>

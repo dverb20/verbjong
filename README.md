@@ -112,16 +112,37 @@ When implemented it will call the **Anthropic Messages API** with tool-use
 (structured output) for a guaranteed-valid JSON action, using a user-supplied API
 key stored locally. Nothing in this build performs network requests.
 
-## Rules notes & simplifications
+## Rules notes (validated against NMJL rules)
 
-- A final hand is validated by combining a player's concealed tiles with every
-  exposed tile into one 14-tile rack and running the matcher — equivalent to the
-  real rules for legality, and it lets jokers settle optimally.
-- To call a discard for an exposure you must hold **>= 2 natural matches**; jokers
-  may pad the group up to kong/quint size.
-- Concealed-category hands can only be won with no exposures.
-- Scoring adds the most common bonuses (jokerless, self-pick, concealed) on top of
-  the hand's base points.
+Enforced by the engine:
+
+- 152 tiles; 13/13/13/14 deal; East discards first.
+- **Charleston:** right/across/left then (optional) left/across/right; **jokers may
+  never be passed** (enforced for bots and the human picker).
+- **Calling a discard:** only for a pung/kong/quint (3+), never a pair; you must
+  hold at least **one real matching tile** (a joker may fill the rest); a **joker
+  discard can't be claimed**.
+- **Exposures must fit the card:** all of a player's exposures must map to distinct
+  groups of a single hand under one consistent suit/run assignment, so you can't
+  build a dead hand (e.g. 3s and 5s in different suits).
+- **Jokers** are legal only in groups of 3+, never a single or pair.
+- **Joker redemption:** swap a joker out of any exposure (yours or others') for the
+  real tile, but only on your turn once you hold 14 tiles (after drawing/claiming).
+- Win = a 14-tile hand on the card; concealed-category hands require no exposures;
+  Mahjong claims beat exposure claims.
+- A final hand is validated by combining concealed + exposed tiles into one 14-tile
+  rack and running the matcher (lets jokers settle optimally).
+
+Known simplifications (not glitches — planned/optional):
+
+- No Charleston **blind pass** or **courtesy pass** yet.
+- Exposures cap at a **quint (5)**; sextets aren't supported (the demo card needs
+  none).
+- You can't yet **add a discard to an existing exposed pung** to promote it to a
+  kong (expose the full group at once instead).
+- No wrong-call **penalty/dead-hand** scoring — the UI simply prevents illegal moves.
+- Single hand per game (no East rotation / running score); "Play again" re-deals.
+- Scoring adds the common bonuses (jokerless, self-pick, concealed) on the base.
 
 ## License / disclaimer
 

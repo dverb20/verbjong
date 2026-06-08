@@ -347,7 +347,9 @@ export function jokerExchangeOptions(
   state: GameState,
   seat: number,
 ): { targetSeat: number; exposureIdx: number; key: string; tileId: string }[] {
-  if (state.currentSeat !== seat) return [];
+  // Only on your own turn, and only once you hold 14 tiles (after drawing or
+  // claiming) — i.e. while choosing what to discard.
+  if (state.currentSeat !== seat || state.turnState !== 'awaitingDiscard') return [];
   const p = state.players[seat];
   const opts: { targetSeat: number; exposureIdx: number; key: string; tileId: string }[] = [];
   for (const target of state.players) {
@@ -368,7 +370,7 @@ export function jokerExchange(
   tileId: string,
 ): GameState {
   const state = clone(prev);
-  if (state.currentSeat !== seat) return state;
+  if (state.currentSeat !== seat || state.turnState !== 'awaitingDiscard') return state;
   const p = state.players[seat];
   const exp = state.players[targetSeat]?.exposures[exposureIdx];
   if (!exp) return state;

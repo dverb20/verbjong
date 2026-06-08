@@ -8,6 +8,8 @@ import {
   declareMahjong,
   discardTile,
   drawTile,
+  jokerExchange,
+  jokerExchangeOptions,
   legalExposureCounts,
   maxExposureCount,
   passDiscard,
@@ -133,6 +135,30 @@ describe('exposure legality against the card', () => {
     g.players[0].concealed.unshift(fiveB);
     g = discardTile(g, 0, fiveB.id);
     expect(legalExposureCounts(g, 1)).toContain(3);
+  });
+});
+
+describe('joker exchange', () => {
+  it('redeems a joker on your turn when you hold the natural tile', () => {
+    let g = freshGame();
+    g.currentSeat = 0;
+    g.turnState = 'awaitingDiscard';
+    g.players[1].exposures = [{ tiles: tiles('5B 5B J'), naturalKey: 'bam5' }];
+    g.players[0].concealed = tiles('5B 1C 2C 3C 4D 6D 7D 8D 9D N E W S 2B');
+    const opts = jokerExchangeOptions(g, 0);
+    expect(opts.length).toBeGreaterThan(0);
+    g = jokerExchange(g, 0, opts[0].targetSeat, opts[0].exposureIdx, opts[0].tileId);
+    expect(g.players[0].concealed.some((x) => x.kind === 'joker')).toBe(true);
+    expect(g.players[1].exposures[0].tiles.some((x) => x.kind === 'joker')).toBe(false);
+  });
+
+  it('is not allowed before you have drawn (only with 14 tiles)', () => {
+    const g = freshGame();
+    g.currentSeat = 0;
+    g.turnState = 'awaitingDraw';
+    g.players[1].exposures = [{ tiles: tiles('5B 5B J'), naturalKey: 'bam5' }];
+    g.players[0].concealed = tiles('5B 1C 2C 3C 4D 6D 7D 8D 9D N E W S');
+    expect(jokerExchangeOptions(g, 0)).toEqual([]);
   });
 });
 

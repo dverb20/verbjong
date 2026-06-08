@@ -8,6 +8,7 @@ import {
   declareMahjong,
   discardTile,
   drawTile,
+  legalExposureCounts,
   maxExposureCount,
   passDiscard,
 } from '../src/engine/game';
@@ -106,6 +107,32 @@ describe('calling an exposure', () => {
     expect(g.players[1].exposures).toHaveLength(1);
     expect(g.players[1].exposures[0].tiles).toHaveLength(3);
     expect(g.players[1].exposures[0].tiles.some((x) => x.kind === 'joker')).toBe(true);
+  });
+});
+
+describe('exposure legality against the card', () => {
+  it('rejects a 5 in a different suit after exposing 3s (no odd hand allows it)', () => {
+    let g = freshGame();
+    g.players[1].exposures = [{ tiles: tiles('3B 3B 3B'), naturalKey: 'bam3' }];
+    g.players[1].concealed = tiles('5C 5C 1D 2D 4D 6D 7D 8D 9D N');
+    const fiveC = t('5C');
+    g.players[0].concealed.unshift(fiveC);
+    g = discardTile(g, 0, fiveC.id);
+    expect(legalExposureCounts(g, 1)).toEqual([]); // 3-bam + 5-crak fit no hand
+    // and the engine refuses the illegal call
+    const before = g.players[1].exposures.length;
+    g = callExposure(g, 1, 3);
+    expect(g.players[1].exposures.length).toBe(before);
+  });
+
+  it('allows a 5 in the SAME suit after exposing 3s (one-suit odds)', () => {
+    let g = freshGame();
+    g.players[1].exposures = [{ tiles: tiles('3B 3B 3B'), naturalKey: 'bam3' }];
+    g.players[1].concealed = tiles('5B 5B 1D 2D 4D 6D 7D 8D 9D N');
+    const fiveB = t('5B');
+    g.players[0].concealed.unshift(fiveB);
+    g = discardTile(g, 0, fiveB.id);
+    expect(legalExposureCounts(g, 1)).toContain(3);
   });
 });
 

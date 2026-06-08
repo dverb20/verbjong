@@ -10,7 +10,7 @@ import {
   type GameState,
   fullRack,
   isJoker,
-  maxExposureCount,
+  legalExposureCounts,
 } from '../engine/game';
 import { matchHand } from '../engine/matcher';
 import type { Tile } from '../engine/tiles';
@@ -110,16 +110,18 @@ export class HeuristicBot implements BotStrategy {
     const ld = state.lastDiscard;
     if (!ld) return { type: 'pass' };
 
-    const maxCount = maxExposureCount(state, seat);
-    if (maxCount < 3) return { type: 'pass' };
+    // Only exposures that are legal against the card are considered.
+    const legal = legalExposureCounts(state, seat);
+    if (legal.length === 0) return { type: 'pass' };
     if (this.difficulty === 'easy' && Math.random() > 0.25) return { type: 'pass' };
 
     const hands = allowedHands(state, seat);
     const dNow = bestDistance(fullRack(p), hands);
     const dWith = bestDistance([...fullRack(p), ld.tile], hands);
     if (dWith < dNow) {
-      // Hard bots will take the larger exposure when it helps (locks a kong).
-      const count = this.difficulty === 'hard' ? Math.min(maxCount, 4) : 3;
+      // Hard bots prefer the largest legal group (locks a kong); others the
+      // smallest to spare jokers.
+      const count = this.difficulty === 'hard' ? legal[legal.length - 1] : legal[0];
       return { type: 'exposure', count };
     }
     return { type: 'pass' };

@@ -225,6 +225,61 @@ export function findBestHand(rack: Tile[], hands: Hand[]): HandRanking | undefin
   return rankHands(rack, hands)[0];
 }
 
+/** A committed exposure, reduced to its matching tile-kind and size. */
+export interface ExposureSpec {
+  key: string;
+  count: number;
+}
+
+/**
+ * Are these exposures legal? They are legal only if every exposure can be matched
+ * to a DISTINCT group of some single hand on the card, under one consistent suit
+ * and run-number assignment. This enforces the card's structure — e.g. you can't
+ * expose 3s and 5s in different suits if no hand allows that.
+ */
+export function exposuresFitSomeHand(exposures: ExposureSpec[], hands: Hand[]): boolean {
+  if (exposures.length === 0) return true;
+  for (const hand of hands) {
+    if (handAdmitsExposures(hand, exposures)) return true;
+  }
+  return false;
+}
+
+function handAdmitsExposures(hand: Hand, exposures: ExposureSpec[]): boolean {
+  const labels = suitLabels(hand);
+  const assignments = suitAssignments(labels);
+  const offset = maxRunOffset(hand);
+  const nCandidates: (number | undefined)[] =
+    offset === null ? [undefined] : Array.from({ length: 9 - offset }, (_, i) => i + 1);
+
+  for (const suits of assignments) {
+    for (const n of nCandidates) {
+      const groups = hand.groups.map((g) => concreteReq(g, suits, n));
+      if (matchExposuresToGroups(exposures, groups)) return true;
+    }
+  }
+  return false;
+}
+
+/** Injectively assign each exposure to a distinct group (same kind, fits size). */
+function matchExposuresToGroups(exposures: ExposureSpec[], groups: ConcreteReq[]): boolean {
+  const used = new Array(groups.length).fill(false);
+  const assign = (i: number): boolean => {
+    if (i === exposures.length) return true;
+    const e = exposures[i];
+    for (let g = 0; g < groups.length; g++) {
+      if (used[g]) continue;
+      if (groups[g].key === e.key && e.count <= groups[g].count) {
+        used[g] = true;
+        if (assign(i + 1)) return true;
+        used[g] = false;
+      }
+    }
+    return false;
+  };
+  return assign(0);
+}
+
 /** True iff the rack is a winning hand for any hand on the card. */
 export function isWinningRack(rack: Tile[], hands: Hand[]): HandRanking | undefined {
   if (rack.length !== HAND_SIZE) return undefined;

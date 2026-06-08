@@ -12,7 +12,7 @@
 //    may pad the group up to kong/quint size.
 
 import type { MahjongCard } from './cardSchema';
-import { isWinningRack, matchHand } from './matcher';
+import { exposuresFitSomeHand, isWinningRack, matchHand } from './matcher';
 import {
   buildWall,
   deal,
@@ -267,6 +267,28 @@ export function maxExposureCount(state: GameState, seat: number): number {
 }
 
 /**
+ * The exposure sizes `seat` may LEGALLY make from the current discard: sizes that
+ * are physically possible AND keep all of the player's exposures (including this
+ * new one) consistent with at least one hand on the card. Returns [] if none.
+ */
+export function legalExposureCounts(state: GameState, seat: number): number[] {
+  const physicalMax = maxExposureCount(state, seat);
+  if (physicalMax < 3) return [];
+  const ld = state.lastDiscard;
+  if (!ld) return [];
+  const key = tileKey(ld.tile);
+  const p = state.players[seat];
+  const existing = p.exposures.map((e) => ({ key: e.naturalKey, count: e.tiles.length }));
+  // Any exposure means concealed-only hands are no longer reachable.
+  const hands = state.card.hands.filter((h) => !h.concealed);
+  const counts: number[] = [];
+  for (let c = 3; c <= physicalMax; c++) {
+    if (exposuresFitSomeHand([...existing, { key, count: c }], hands)) counts.push(c);
+  }
+  return counts;
+}
+
+/**
  * `seat` calls the current discard to make an exposure of `count` tiles
  * (3=pung, 4=kong, 5=quint). Consumes the discard + (count-1) tiles from hand,
  * preferring naturals then jokers. It becomes `seat`'s turn to discard.
@@ -275,7 +297,8 @@ export function callExposure(prev: GameState, seat: number, count: number): Game
   const state = clone(prev);
   const ld = state.lastDiscard;
   if (!ld || state.turnState !== 'callWindow') return state;
-  if (count < 3 || count > maxExposureCount(state, seat)) return state;
+  // Must be physically possible AND legal against the card.
+  if (count < 3 || !legalExposureCounts(state, seat).includes(count)) return state;
   const p = state.players[seat];
   const key = tileKey(ld.tile);
 

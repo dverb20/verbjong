@@ -125,7 +125,7 @@ function OpponentCard({ player, active }: { player: Player; active: boolean }) {
 
 function Center({ game }: { game: GameState }) {
   const callPrompt = useStore((s) => s.callPrompt);
-  const claimable = !!callPrompt && (callPrompt.canMahjong || callPrompt.maxExposure >= 3);
+  const claimable = !!callPrompt && (callPrompt.canMahjong || callPrompt.counts.length > 0);
 
   return (
     <div className="flex-1 min-h-0 px-3 py-2 flex flex-col">
@@ -347,7 +347,7 @@ function CallControls() {
   const pass = useStore((s) => s.humanPassCall);
   const tile = game.lastDiscard?.tile;
   const fromName = game.lastDiscard ? game.players[game.lastDiscard.seat].name : '';
-  const canClaim = prompt.canMahjong || prompt.maxExposure >= 3;
+  const canClaim = prompt.canMahjong || prompt.counts.length > 0;
 
   // How many of MY tiles match the discard, so each option can show its real
   // joker cost. To make a group of `size`, I use the discard + (size-1) tiles
@@ -357,9 +357,8 @@ function CallControls() {
   const naturals = tile ? me.concealed.filter((t) => !isJoker(t) && tileKey(t) === key).length : 0;
   const jokerCost = (size: number) => Math.max(0, size - 1 - naturals);
 
-  // Offer every legal size, smallest first, each clearly labelled.
-  const sizes: number[] = [];
-  for (let s = 3; s <= prompt.maxExposure; s++) sizes.push(s);
+  // Only the legal sizes (already validated against the card), smallest first.
+  const sizes = prompt.counts;
 
   return (
     <div className="space-y-2 animate-pop">

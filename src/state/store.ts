@@ -22,7 +22,7 @@ import {
   type Difficulty,
   type GameState,
   jokerExchange,
-  maxExposureCount,
+  legalExposureCounts,
   passDiscard,
   stopCharleston,
 } from '../engine/game';
@@ -80,8 +80,9 @@ interface StoreState {
   screen: Screen;
   game: GameState | null;
   settings: Settings;
-  /** When set, the human must respond to a callable discard. */
-  callPrompt: { canMahjong: boolean; maxExposure: number } | null;
+  /** When set, the human must respond to a callable discard. `counts` lists the
+   *  legal exposure sizes (3/4/5) they may make from it. */
+  callPrompt: { canMahjong: boolean; counts: number[] } | null;
   /** True when the human's freshly-drawn rack is a winning hand. */
   selfDrawWin: boolean;
   /** Post-game coaching line. */
@@ -209,17 +210,17 @@ export const useStore = create<StoreState>((set, get) => {
     if (g.turnState === 'callWindow') {
       // Human's own win is offered first so a bot can never rob it.
       if (canCallMahjong(g, 0)) {
-        set({ callPrompt: { canMahjong: true, maxExposure: maxExposureCount(g, 0) } });
+        set({ callPrompt: { canMahjong: true, counts: legalExposureCounts(g, 0) } });
         return null;
       }
       const botMJ = botMahjongSeat(g);
       if (botMJ !== null) return { run: () => apply(declareMahjong(g, botMJ, true)), delay: 650 };
       // Pause for the human when they can legally claim, OR (when stepping is on)
       // after any opponent's discard so they can review and continue at their pace.
-      const maxExp = maxExposureCount(g, 0);
+      const counts = legalExposureCounts(g, 0);
       const fromOpponent = (g.lastDiscard?.seat ?? 0) !== 0;
-      if (maxExp >= 3 || (get().settings.pauseOnDiscard && fromOpponent)) {
-        set({ callPrompt: { canMahjong: false, maxExposure: maxExp } });
+      if (counts.length > 0 || (get().settings.pauseOnDiscard && fromOpponent)) {
+        set({ callPrompt: { canMahjong: false, counts } });
         return null;
       }
       return { run: () => apply(resolveBotsForDiscard(g)), delay: 500 };

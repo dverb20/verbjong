@@ -6,7 +6,9 @@ import {
   canStopCharleston,
   charlestonStep,
   fullRack,
+  isJoker,
   jokerExchangeOptions,
+  tileKey,
   tileLabel,
 } from '../engine/game';
 import type { GameState, Player } from '../engine/game';
@@ -123,20 +125,15 @@ function OpponentCard({ player, active }: { player: Player; active: boolean }) {
 
 function Center({ game }: { game: GameState }) {
   const callPrompt = useStore((s) => s.callPrompt);
-  const callExposure = useStore((s) => s.humanCallExposure);
-  const callMahjong = useStore((s) => s.humanCallMahjong);
   const claimable = !!callPrompt && (callPrompt.canMahjong || callPrompt.maxExposure >= 3);
-  const claim = () => {
-    if (!callPrompt) return;
-    if (callPrompt.canMahjong) callMahjong();
-    else callExposure(3);
-  };
 
   return (
     <div className="flex-1 min-h-0 px-3 py-2 flex flex-col">
       <div className="text-xs uppercase tracking-wider text-sumi-soft mb-1">
         Discards
-        {claimable && <span className="text-koi-deep normal-case"> · tap the glowing tile to take it</span>}
+        {claimable && (
+          <span className="text-koi-deep normal-case"> · the glowing tile is yours to claim below</span>
+        )}
       </div>
       <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar">
         <div className="flex flex-wrap gap-1 content-start">
@@ -147,7 +144,6 @@ function Center({ game }: { game: GameState }) {
                 key={t.id}
                 tile={t}
                 size="sm"
-                onClick={isLast && claimable ? claim : undefined}
                 className={
                   isLast ? (claimable ? 'ring-2 ring-koi animate-pop' : 'ring-2 ring-koi') : ''
                 }
@@ -341,6 +337,8 @@ function CharlestonInner(props: {
   );
 }
 
+const SIZE_NAME: Record<number, string> = { 3: 'Pung', 4: 'Kong', 5: 'Quint' };
+
 function CallControls() {
   const game = useStore((s) => s.game)!;
   const prompt = useStore((s) => s.callPrompt)!;
@@ -351,14 +349,26 @@ function CallControls() {
   const fromName = game.lastDiscard ? game.players[game.lastDiscard.seat].name : '';
   const canClaim = prompt.canMahjong || prompt.maxExposure >= 3;
 
+  // How many of MY tiles match the discard, so each option can show its real
+  // joker cost. To make a group of `size`, I use the discard + (size-1) tiles
+  // from hand: naturals first, jokers only for the rest.
+  const me = game.players[0];
+  const key = tile ? tileKey(tile) : '';
+  const naturals = tile ? me.concealed.filter((t) => !isJoker(t) && tileKey(t) === key).length : 0;
+  const jokerCost = (size: number) => Math.max(0, size - 1 - naturals);
+
+  // Offer every legal size, smallest first, each clearly labelled.
+  const sizes: number[] = [];
+  for (let s = 3; s <= prompt.maxExposure; s++) sizes.push(s);
+
   return (
     <div className="space-y-2 animate-pop">
       {canClaim ? (
         <div className="rounded-xl bg-koi/15 border border-koi px-3 py-2 text-center">
           <div className="font-bold text-koi-deep text-sm">
-            ✋ You can take {tile ? tileLabel(tile) : 'this'}!
+            ✋ Take {tile ? tileLabel(tile) : 'this tile'}? Choose what to make — or keep going.
           </div>
-          <div className="text-xs text-sumi-soft">Tap the glowing tile, or a button below.</div>
+          <div className="text-xs text-sumi-soft">Each option shows if it spends any of your jokers.</div>
         </div>
       ) : (
         <div className="rounded-xl bg-washi border border-washi-deep px-3 py-2 text-center">
@@ -366,43 +376,49 @@ function CallControls() {
             {fromName} discarded {tile ? tileLabel(tile) : ''} — you can't take this one.
           </div>
           <div className="text-xs text-sumi-soft">
-            To claim, you'd need a matching tile in hand (a joker can fill in). Tap “Keep going.”
+            You can only claim a discard to make a pung/kong (3+), and you'd need a matching tile.
+            Tap “Keep going.”
           </div>
         </div>
       )}
-      <div className="flex gap-2">
-        {prompt.canMahjong && (
-          <button onClick={callMahjong} className="flex-1 py-3 btn-primary">
-            Mahjong!
-          </button>
-        )}
-        {prompt.maxExposure >= 3 && (
-          <button
-            onClick={() => callExposure(3)}
-            className="flex-1 py-3 rounded-full bg-sora text-white font-bold shadow-soft"
-          >
-            Pung
-          </button>
-        )}
-        {prompt.maxExposure >= 4 && (
-          <button
-            onClick={() => callExposure(4)}
-            className="flex-1 py-3 rounded-full bg-sora-deep text-white font-bold shadow-soft"
-          >
-            Kong
-          </button>
-        )}
-        <button
-          onClick={pass}
-          className={
-            canClaim
-              ? 'px-5 py-3 btn-soft'
-              : 'flex-1 py-3 rounded-full bg-matcha text-white font-black shadow-soft active:scale-95'
-          }
-        >
-          Keep going ▸
-        </button>
-      </div>
+
+      {canClaim && (
+        <div className="space-y-1.5">
+          {prompt.canMahjong && (
+            <button onClick={callMahjong} className="w-full py-3 btn-primary">
+              🀄 Mahjong — win with this tile!
+            </button>
+          )}
+          {sizes.map((size) => {
+            const cost = jokerCost(size);
+            return (
+              <button
+                key={size}
+                onClick={() => callExposure(size)}
+                className={`w-full py-2.5 rounded-xl font-bold flex items-center justify-between px-4 border ${
+                  cost === 0
+                    ? 'bg-sora text-white border-sora-deep shadow-soft'
+                    : 'bg-amber-50 text-amber-900 border-amber-300'
+                }`}
+              >
+                <span>
+                  {SIZE_NAME[size]} <span className="font-normal opacity-80">· {size} tiles</span>
+                </span>
+                <span className={`text-xs ${cost === 0 ? 'opacity-90' : 'font-semibold'}`}>
+                  {cost === 0 ? 'no jokers' : `⚠ uses ${cost} joker${cost > 1 ? 's' : ''}`}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      <button
+        onClick={pass}
+        className="w-full py-3 rounded-full bg-matcha text-white font-black shadow-soft active:scale-95"
+      >
+        Keep going ▸
+      </button>
     </div>
   );
 }
